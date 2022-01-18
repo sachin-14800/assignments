@@ -10,3 +10,5 @@ request('http://www.google.com',function(error,response,body){
     }
     fs.writeFileSync(path.join(__dirname,'google.html'),body,'utf8');
 });
+
+request('http://google.com/doodle.png').pipe(fs.createWriteStream('doodle.png'));
