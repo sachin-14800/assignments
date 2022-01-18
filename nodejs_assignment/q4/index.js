@@ -33,7 +33,6 @@ console.log(dir);
                 if(err)
                 console.log(err);
             });
-            console.log(dir);
             
         })
        } 
@@ -43,5 +42,3 @@ console.log(dir);
     {
         console.log(`Error is ${err}`);
     });
-
-    console.log(dir);
