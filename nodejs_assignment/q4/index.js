@@ -18,7 +18,6 @@ let num=0;
 let dir="folder0";
 if(!fs.existsSync(dir))
     fs.mkdirSync(dir);
-console.log(dir);
     async.parallel([
        function(){
         arr.forEach((element)=>{
