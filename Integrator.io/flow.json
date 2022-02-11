@@ -1,0 +1,24 @@
+{
+    "name": "Rest API to Rest API",
+    "disabled": false,
+    "skipRetries": false,
+    "pageProcessors": [
+        {
+            "responseMapping": {
+                "fields": [],
+                "lists": []
+            },
+            "type": "import",
+            "_importId": "61fb7d1a755af325758e70ac"
+        }
+    ],
+    "pageGenerators": [
+        {
+            "_exportId": "61fb82b8f5880f4cf5d912fb",
+            "skipRetries": false
+        }
+    ],
+    "createdAt": "2022-02-03T07:22:33.502Z",
+    "lastExecutedAt": "2022-02-09T06:17:59.102Z",
+    "autoResolveMatchingTraceKeys": true
+}

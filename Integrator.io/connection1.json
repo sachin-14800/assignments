@@ -1,0 +1,33 @@
+{
+    "type": "http",
+    "name": "REST API connection",
+    "http": {
+        "formType": "rest",
+        "mediaType": "json",
+        "baseURI": "https://api.integrator.io/v1/connections",
+        "ping": {
+            "relativeURI": "/",
+            "method": "GET"
+        },
+        "unencrypted": {
+            "field": "value"
+        },
+        "encrypted": "******",
+        "auth": {
+            "type": "token",
+            "token": {
+                "token": "******",
+                "location": "header",
+                "headerName": "Authorization",
+                "scheme": "Bearer",
+                "paramName": "access_token",
+                "refreshMethod": "POST"
+            }
+        }
+    },
+    "queues": [
+        {
+            "name": "61fb7ccdc3d6fb7505ee280c"
+        }
+    ]
+}

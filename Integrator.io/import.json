@@ -1,0 +1,36 @@
+{
+    "name": "Import sales records",
+    "_connectionId": "61fb7ccdc3d6fb7505ee280c",
+    "apiIdentifier": "ic031a36a8",
+    "ignoreExisting": false,
+    "ignoreMissing": false,
+    "oneToMany": false,
+    "sandbox": false,
+    "mapping": {
+        "fields": [
+            {
+                "extract": "_billingaddress_city",
+                "generate": "city"
+            }
+        ]
+    },
+    "http": {
+        "relativeURI": [
+            "/salesorder"
+        ],
+        "method": [
+            "POST"
+        ],
+        "body": [
+            "{\n  \"id\":\"{{record.id}}\"\n}"
+        ],
+        "batchSize": 1,
+        "requestMediaType": "json",
+        "successMediaType": "json",
+        "errorMediaType": "json",
+        "strictHandlebarEvaluation": true,
+        "sendPostMappedData": true,
+        "formType": "rest"
+    },
+    "adaptorType": "HTTPImport"
+}
