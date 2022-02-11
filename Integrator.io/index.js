@@ -11,7 +11,7 @@ let options = {
     url: 'https://api.integrator.io/v1/connections',
     method: 'POST',
     headers: {
-        'Authorization': 'Bearer 1c6a578320724ee7bb0a0c7f54f101b8',
+        'Authorization': 'Bearer *****',
         'Content-Type': 'application/json'
     },
     body: connBody
