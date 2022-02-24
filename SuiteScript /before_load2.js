@@ -3,49 +3,129 @@
  * @NScriptType UserEventScript
  */
 
- define ( ['N/record', 'N/ui/serverWidget'],
+ define ( ['N/runtime', 'N/log','N/record','N/search','N/email','N/render'],
 
-    function(record,serverWidget)
+    function(runtime,log,record,search,email,render)
     {
         function beforeLoad(context)
         {
-            if (context.type !== context.UserEventType.CREATE)
-                return;
-                log.debug({
-                    title:"completed successfully",
-                    details:"Hello"
+            try{
+                const rec=context.newRecord;
+                const form=context.form;
+                const val=rec.getValue({
+                    fieldId:'entityname',
                 });
-            // var newrecord=context.newRecord;
-            var value=context.newRecord.getValue({
-                fieldId:'entityname',
+                var customer=record.load({
+                    type:'customer',
+                    id:rec.getValue({
+                        fieldId:'entity'
+                    })
+                });
+                form.addButton({
+                    id:'custpage_update_customer',
+                    label:'update',
+                    functionName:'rec.setValue({fieldId:"custbody26",value:customer.getValue({fieldId:"entityname"})})'
+                });
+            }
+            catch(error) {
+            log.error({
+                title: 'beforeLoad_addButton',
+                details: error.message
             });
-            var form=context.form;
-            var button=form.addButton({
-                id:'custpage_Update_customer',
-                label:'Update customer',
-                functionName:context.newRecord.setValue({
-                    fieldId:'custbody26',
-                    value:value
-                })
-            });
-            
+        }    
         }
         function beforeSubmit(context)
         {
-            if (context.type !== context.UserEventType.CREATE)
-            return;
-            var rec=context.newRecord;
+            try{
+                const rec=context.newRecord;
+                const newRec=record.create({
+                    type:'customrecord1146',
+                });
+                newRec.setValue({
+                    fieldId:'custrecord1421',
+                    value:rec.getValue({
+                        fieldId:'entity'
+                    })
+                });
+                newRec.setValue({
+                    fieldId:'name',
+                    value:rec.getValue({
+                        fieldId:'entityname'
+                    })
+                });
+                newRec.setValue({
+                    fieldId:'custrecord1422',
+                    value:rec.getValue({
+                        fieldId:'id'
+                    })
+                });
+
+                var mySearch=search.create({
+                    type:'customrecord1146',
+                    filters:[],
+                    columns:[
+                        search.createColumn({name:'custrecord1422',label:'custrecord1422'})
+                    ]
+                });
+
+                var results=mySearch.run();
+                for(var i=0;i<results.length;i++)
+                {
+                    if(results[i].getValue({fieldId:'custrecord1422'})==rec.getValue({fieldId:'id'}))
+                        return;
+                }
+                var newRecId=newRec.save();
+            }
+            catch(error)
+            {
+                log.error({
+                    title: 'beforeSubmit_createRecord',
+                    details: error.message
+                });
+            }
         }
         function afterSubmit(context){
-            if (context.type !== context.UserEventType.CREATE)
-            return;
-            var rec=context.newRecord;
-            var customer=rec.getValue({
-                fieldId:'entity'
-            });
+            try{
+                var rec=context.newRecord;
+                var customer=record.load({
+                    type:'customer',
+                    id:rec.getValue({
+                        fieldId:'entity'
+                    })
+                });
+                var subject="New order created";
+                var msg = 'Your order with the following items is created:';
+                var currentUser=runtime.getCurrentUser().id;
+                var recipient=customer.getValue({
+                    fieldId:'email'
+                });
+                var id=parseInt(rec.getValue({fieldId:'id'}));
+                var attach=render.transaction({
+                    entityId:id,
+                    printMode:render.PrintMode.PDF,
+                })
+                email.send({
+                    author:currentUser,
+                    recipients:recipient,
+                    subject:subject,
+                    body:msg,
+                    attachments:[attach],
+                    relatedRecords:{
+                        transactionId:id
+                    }
+                });
+            }
+            catch(error)
+            {
+                log.error({
+                    title: 'afterSubmit_sendEmail',
+                    details: error.message
+                });
+            }
         }
     return {
         beforeLoad:beforeLoad,
-        beforeSubmit:beforeSubmit
+        beforeSubmit:beforeSubmit,
+        afterSubmit:afterSubmit
     };
     })
