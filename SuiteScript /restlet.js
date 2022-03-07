@@ -8,18 +8,19 @@ function getOrders(data) {
     columns[1]=new nlobjSearchColumn('tranid');
 
 
-    var search = nlapiCreateSearch('transaction', filters, columns);
-    var searchId=search.saveSearch('Orders','customsearch_pending_orders');
+    // var search = nlapiCreateSearch('transaction', filters, columns);
+    // var searchId=search.saveSearch('Orders','customsearch_pending_orders');
 
-    search=nlapiLoadSearch('transaction','customsearch_pending_orders');
+    var search=nlapiSearchRecord('transaction','customsearch_pending_orders',filters,columns);
+    nlapiLogExecution('Debug','receive data',search);
     var res=[];
-    
-    var searchresults = search.runSearch();
-    for(var i=0;searchresults!=null && i<searchresults.length;i++)
+
+    for(var i=0;search!=null && i<search.length;i++)
     {
-        res.push({orderno:searchresults[i].getValue('tranid'),total:searchresults[i].getValue('total')});
+        var record=search[i];
+        res.push({orderno:record.getValue('tranid'),total:record.getValue('total')});
     }
-    nlapiLogExecution('Debug','receive data',JSON.stringify(res));
+    nlapiLogExecution('Debug','receive data',res);
 	return JSON.stringify(res);
 }
 
