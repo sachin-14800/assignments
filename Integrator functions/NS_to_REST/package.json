@@ -1,0 +1,17 @@
+{
+  "name": "integrator-functions",
+  "version": "1.0.0",
+  "description": "\"integrator extension functions\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "\"sachin\"",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.3",
+    "express-integrator-extension": "^0.2.11",
+    "lodash": "^4.17.21",
+    "request": "^2.88.2"
+  }
+}
