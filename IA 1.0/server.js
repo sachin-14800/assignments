@@ -4,7 +4,7 @@ var functions=require('./extensionFunctions');
 
 var systemToken='65edce37601841afa5e569333db8e149';
 var config={
-    // diy:functions,
+    // diy:functions, // for diy functions only
     connectors:{'6229ba0a5508c525da020aa9':functions},  //for connectors
     systemToken:systemToken,
     port:8080
