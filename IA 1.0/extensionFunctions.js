@@ -14,6 +14,25 @@ function getSettingObj(flowId) {
                         showSchedule: false,
                         disableSlider: true
                     }
+                ],
+                fields:[
+                    {
+                        label: "NS export name",
+                        type: "select",
+                        name: "NS_export_name",
+                        supportsRefresh: true,
+                        tooltip: "Choose this setting to change the name of export",
+                        options: [
+                            [
+                                "Netsuite Export",
+                                "Netsuite Export"
+                            ],
+                            [
+                                "NS Export",
+                                "NS Export"
+                            ]
+                        ]
+                    }
                 ]
             }
         ],
@@ -24,81 +43,97 @@ function getSettingObj(flowId) {
         }
     }
 }
-const verifyConnectionFunc=function(options,callback)
+
+function getpPutCallOptions(integrationId,integration,token)
 {
-    const integrationId=options._integrationId;
-    const token=options.bearerToken;
-    const integrationOptions={
+    return {
+        url:`https://api.staging.integrator.io/v1/integrations/${integrationId}`,
+        method:'PUT',
+        headers:{
+            'Authorization':`Bearer ${token}`,
+            'content-Type':'application/json'
+        },
+        body:JSON.stringify(integration)
+    };
+}
+
+function getIntegrationOptions(integrationId,token)
+{
+    return {
         url:`https://api.staging.integrator.io/v1/integrations/${integrationId}`,
         method:'GET',
         headers:{
             'Authorization':`Bearer ${token}`,
             'content-Type':'application/json'
         }
+    };
+}
+
+function getPostCallOptions(url,file,token)
+{
+    return {
+        url:url,
+        method:'POST',
+        headers:{
+            'Authorization':`Bearer ${token}`,
+            'content-Type':'application/json'
+        },
+        body:fs.readFileSync(file)
+    };
+}
+function getPutCallOptions(url,file,token)
+{
+    return {
+        url:url,
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body:fs.readFileSync(file)
     }
+}
+const verifyConnectionFunc=function(options,callback)
+{
+    const integrationId=options._integrationId;
+    const token=options.bearerToken;
+    const integrationOptions=getIntegrationOptions(integrationId,token);
     request(integrationOptions,(error,response,body)=>{
         if(error)
         {
-            console.log(error);
-            callback(error,null);
+            return callback(new Error('error'));
         }
         else
         {
             const integration=JSON.parse(body);
             const connectionId=integration.install[0]._connectionId;
-            const exportOptions={
-                url:`https://api.staging.integrator.io/v1/exports`,
-                method:'POST',
-                headers:{
-                    'Authorization':`Bearer ${token}`,
-                    'content-Type':'application/json'
-                },
-                body:fs.readFileSync('./export.json')
-            }
+            const exportOptions=getPostCallOptions(`https://api.staging.integrator.io/v1/exports`,'./export.json',token);
             const ebody=JSON.parse(exportOptions.body);
             ebody._connectionId=connectionId;
             exportOptions.body=JSON.stringify(ebody);
             request(exportOptions,(error,response,body)=>{
                 if(error)
                 {
-                    console.log(error);
-                    callback(error,null);
+                    return callback(new Error('error'));
                 }
                 else
                 {
                     const exportId=JSON.parse(body)._id;
                     console.log(JSON.parse(body));
-                    const importOptions={
-                        url:`https://api.staging.integrator.io/v1/imports`,
-                        method:'POST',
-                        headers:{
-                            'Authorization':`Bearer ${token}`,
-                            'content-Type':'application/json'
-                        },
-                        body:fs.readFileSync('./import.json')
-                    }
+                    const importOptions=getPostCallOptions(`https://api.staging.integrator.io/v1/imports`,'./import.json',token);
                     const ibody=JSON.parse(importOptions.body);
                     ibody._connectionId=connectionId;
                     importOptions.body=JSON.stringify(ibody);
                     request(importOptions,(error,response,body)=>{
                         if(error)
                         {
-                            console.log(error);
-                            callback(error,null);
+                            return callback(new Error('error'));
                         }
                         else
                         {
                             const importId=JSON.parse(body)._id;
                             console.log(JSON.parse(body));
-                            const flowOptions={
-                                url:`https://api.staging.integrator.io/v1/flows`,
-                            method:'POST',
-                            headers:{
-                                'Authorization':`Bearer ${token}`,
-                                'content-Type':'application/json'
-                            },
-                            body:fs.readFileSync('./flow.json')
-                            }
+                            const flowOptions=getPostCallOptions(`https://api.staging.integrator.io/v1/flows`,'./flow.json',token);
                             const fbody=JSON.parse(flowOptions.body);
                             fbody.pageProcessors[0]._importId=importId;
                             fbody.pageGenerators[0]._exportId=exportId;
@@ -107,8 +142,7 @@ const verifyConnectionFunc=function(options,callback)
                             request(flowOptions,(error,response,body)=>{
                                 if(error)
                                 {
-                                    console.log(error);
-                                    callback(error,null);
+                                    return callback(new Error('error'));
                                 }
                                 else
                                 {
@@ -122,20 +156,11 @@ const verifyConnectionFunc=function(options,callback)
                                     integration.install[0].completed=true;
                                     integration.mode="settings";
                                    
-                                    const integrationPutCallOptions={
-                                        url:`https://api.staging.integrator.io/v1/integrations/${integrationId}`,
-                                        method:'PUT',
-                                        headers:{
-                                            'Authorization':`Bearer ${token}`,
-                                            'content-Type':'application/json'
-                                        },
-                                        body:JSON.stringify(integration)
-                                    };
+                                    const integrationPutCallOptions=getpPutCallOptions(integrationId,integration,token);
                                     request(integrationPutCallOptions,(error,response,body)=>{
                                         if(error)
                                         {
-                                            console.log(error);
-                                            callback(error,null);
+                                            return callback(new Error('error'));
                                         }
                                         else
                                         {
@@ -157,38 +182,21 @@ const installConnector=function (options,callback)
 {
     const integrationId=options._integrationId;
     const token=options.bearerToken;
-    const connectionOptions={
-        url:'https://api.staging.integrator.io/v1/connections',
-        method:'POST',
-        headers:{
-            'Authorization':`Bearer ${token}`,
-            'content-Type':'application/json'
-        },
-        body:fs.readFileSync('./netsuite.json')
-    }
+    const connectionOptions=getPostCallOptions('https://api.staging.integrator.io/v1/connections','./netsuite.json',token);
     request(connectionOptions,(error,response,body)=>{
         if(error)
         {
-            console.log(error);
-            callback(error,null);
+            return callback(new Error('error'));
         }
         else
         {
             const connectionId=JSON.parse(body)._id;
             console.log(connectionId);
-            const integrationOptions={
-                url:`https://api.staging.integrator.io/v1/integrations/${integrationId}`,
-                method:'GET',
-                headers:{
-                    'Authorization':`Bearer ${token}`,
-                    'content-Type':'application/json'
-                }
-            }
+            const integrationOptions=getIntegrationOptions(integrationId,token);
             request(integrationOptions,(error,response,body)=>{
                 if(error)
                 {
-                    console.log(error);
-                    callback(error,null);
+                    return callback(new Error('error'));
                 }
                 else{
                     const integration=JSON.parse(body);
@@ -204,15 +212,7 @@ const installConnector=function (options,callback)
                     };
                     integration.install.push(netsuiteObj);
                     console.log(integration);
-                    const integrationPutCallOptions={
-                        url:`https://api.staging.integrator.io/v1/integrations/${integrationId}`,
-                        method:'PUT',
-                        headers:{
-                            'Authorization':`Bearer ${token}`,
-                            'content-Type':'application/json'
-                        },
-                        body:JSON.stringify(integration)
-                    };
+                    const integrationPutCallOptions=getpPutCallOptions(integrationId,integration,token);
                     request(integrationPutCallOptions,(error,response,body)=>{
                         if(error)
                         {
@@ -234,14 +234,7 @@ const updateConnector=function(options,callback)
 {
     const integration = options._integrationId;
     const token = options.bearerToken;
-    const integrationOptions = {
-        url: `https://api.staging.integrator.io/v1/integrations/${integration}`,
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    };
+    const integrationOptions = getIntegrationOptions(integration,token);
     request(integrationOptions,(error,response,body)=>{
         if (error) {
             return callback(new Error('error'));
@@ -262,20 +255,12 @@ const updateConnector=function(options,callback)
                 return callback(new Error('error'));
             }
             const connectionId=JSON.parse(body)._connectionId;
-            exportOptions={
-                url:`https://api.staging.integrator.io/v1/exports/${exportId}`,
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body:fs.readFileSync('./export.json')
-            }
+            exportOptions=getPutCallOptions(`https://api.staging.integrator.io/v1/exports/${exportId}`,'./export.json',token);
             const ebody=JSON.parse(exportOptions.body);
             ebody.name="Netsuite new Export";
             ebody._connectionId=connectionId;
             exportOptions.body=JSON.stringify(ebody);
-            intobj.updateInProgress = false;
+            
             request(exportOptions,(error,response,body)=>{
                 if(error)
                 {
@@ -284,19 +269,12 @@ const updateConnector=function(options,callback)
                 else
                 {
                     console.log(JSON.parse(body));
-                    const intOptions = {
-                        url: `https://api.staging.integrator.io/v1/integrations/${integration}`,
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body:JSON.stringify(intobj)
-                    };
+                    intobj.updateInProgress = false;
+                    const intOptions = getpPutCallOptions(integration,intobj,token);
                     request(intOptions,(error,response,body)=>{
                         console.log(JSON.parse(body));
                         return callback(null,body);
-                    })
+                    });
                     
                 }
             });
@@ -306,6 +284,59 @@ const updateConnector=function(options,callback)
         
     })
 }
+const persistSettings=function (options,callback)
+{
+    const integrationId=options._integrationId;
+    const token=options.bearerToken;
+    const intOptions=getIntegrationOptions(integrationId,token);
+    request(intOptions,(error,response,body)=>{
+        if(error)
+        {
+            return callback(new Error('error'));
+        }
+        var integrationObj=JSON.parse(body);
+        const pending=options.pending;
+        console.log(options);
+        integrationObj.settings.sections[0].fields[0].value=pending.NS_export_name;
+        const exportId=integrationObj.settings.commonresources.exports[0];
+    var exportOptions={
+        url:`https://api.staging.integrator.io/v1/exports/${exportId}`,
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    }
+    request(exportOptions,(error,response,body)=>{
+        if(error)
+        {
+            return callback(new Error('error'));
+        }
+        const connectionId=JSON.parse(body)._connectionId;
+        exportOptions=getPutCallOptions(`https://api.staging.integrator.io/v1/exports/${exportId}`,'./export.json',token);
+        const ebody=JSON.parse(exportOptions.body);
+        ebody.name=pending.NS_export_name;
+        ebody._connectionId=connectionId;
+        exportOptions.body=JSON.stringify(ebody);
+        request(exportOptions,(error,response,body)=>{
+            if(error)
+            {
+                return callback(new Error('error'));
+            }
+            console.log(JSON.parse(body));
+            const intoptions=getIntegrationOptions(integrationId,integrationObj,token);
+            request(intoptions,(error,response,body)=>{
+                if(error)
+                {
+                    return callback(new Error('error'));
+                }
+                return callback(null,body);
+            });  
+        })
+    });
+        
+    });
+}
 var obj={
     installer:{
         installConnector:installConnector,
@@ -313,38 +344,42 @@ var obj={
         updateConnector:updateConnector,
     },
     settings:{
-        persistSettings: function (options, callback) {
-        },
-        refreshMetadata: function (options, callback) {}
+        persistSettings:persistSettings,
+        refreshMetadata: function (options, callback) {
+            var arr=[];
+            const integrationId=options._integrationId;
+            const token=options.bearerToken;
+            const intOptions=getIntegrationOptions(integrationId,token);
+            request(intOptions,(error,response,body)=>{
+                if(error)
+                {
+                    return callback(new Error('error'));
+                }
+                var integration=JSON.parse(body);
+                console.log(options);
+                arr.push(['Netsuite Export','Netsuite Export']);
+                arr.push(['NS Export','NS Export']);
+                integration.settings.sections[0].fields[0].options=arr;
+                const intOptions=getpPutCallOptions(integrationId,integration,token);
+                request(intOptions,(error,response,body)=>{
+                    return callback(null,body);
+                });
+            });
+        }
     },
     uninstaller:{
         preUninstallFunction: function (options, callback) {
             console.log('called preuninstall');
             const integration = options._integrationId;
             const token = options.bearerToken;
-            const integrationOptions = {
-                url: `https://api.staging.integrator.io/v1/integrations/${integration}`,
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
+            const integrationOptions = getIntegrationOptions(integration,token);
             request(integrationOptions, (error, response, body) => {
                 if (error) {
                     return callback(new Error('error'));
                 }
                 var intObj = JSON.parse(body);
                 intObj.mode = 'uninstall';
-                const putIntObj = {
-                    url: `https://api.staging.integrator.io/v1/integrations/${integration}`,
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(intObj)
-                };
+                const putIntObj = getpPutCallOptions(integration,intObj,token);
                 request(putIntObj, (error, response, body) => {
                     console.log(JSON.parse(body));
                     return callback(null, [{
